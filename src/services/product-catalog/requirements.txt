@@ -1,0 +1,23 @@
+# Flask-based Product Catalog Service (Python 3.7 compatible)
+Flask==2.2.5
+Flask-CORS==4.0.0
+psycopg2-binary==2.9.7
+redis==4.6.0
+boto3==1.28.85
+requests==2.31.0
+python-json-logger==2.0.7
+
+# Compatibility fixes for Python 3.7 and older OpenSSL
+urllib3==1.26.18
+cryptography==3.4.8
+
+# OpenTelemetry dependencies (Python 3.7 compatible versions)
+opentelemetry-api==1.20.0
+opentelemetry-sdk==1.20.0
+opentelemetry-exporter-otlp-proto-http==1.20.0
+opentelemetry-instrumentation-flask==0.41b0
+opentelemetry-instrumentation-requests==0.41b0
+opentelemetry-instrumentation-psycopg2==0.41b0
+opentelemetry-instrumentation-redis==0.41b0
+opentelemetry-instrumentation-boto3sqs==0.41b0
+opentelemetry-instrumentation-logging==0.41b0

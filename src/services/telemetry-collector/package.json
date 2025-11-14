@@ -1,0 +1,8 @@
+{
+  "name": "telemetry-collector",
+  "version": "1.0.0",
+  "dependencies": {
+    "@aws-sdk/client-ssm": "^3.0.0",
+    "@opentelemetry/otlp-transformer": "^0.45.0"
+  }
+}

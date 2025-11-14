@@ -1,0 +1,18 @@
+{
+  "creation_date": "2025-10-31T13:48:34.473250",
+  "user": {
+    "userId": "852f0407-5932-48ee-a087-86df54773913",
+    "email": "demo@artisandesks.com",
+    "name": "Demo User",
+    "username": "demo",
+    "password": "demo"
+  },
+  "cart_items": [],
+  "login_instructions": {
+    "endpoint": "POST /auth/login",
+    "payload": {
+      "email": "demo@artisandesks.com",
+      "password": "demo"
+    }
+  }
+}

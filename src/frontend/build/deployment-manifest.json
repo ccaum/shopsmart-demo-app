@@ -1,0 +1,11 @@
+{
+    "buildTime": "2025-10-29T00:10:26Z",
+    "environment": "production",
+    "services": {
+        "authService": "https://k1a1cujgk9.execute-api.us-west-2.amazonaws.com/v1",
+        "productService": "http://ShopSm-Produ-UfKCNxyEmIgv-385919621.us-west-2.elb.amazonaws.com",
+        "orderService": "http://internal-shopsmart-prod-order-proc-1426236774.us-west-2.elb.amazonaws.com"
+    },
+    "deploymentTarget": "ec2",
+    "corsOrigins": "*"
+}

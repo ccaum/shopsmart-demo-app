@@ -1,0 +1,52 @@
+*.js
+!jest.config.js
+*.d.ts
+node_modules
+
+# CDK asset staging directory
+.cdk.staging
+cdk.out*
+cdk-deploy.out
+
+# Generated outputs
+outputs.json
+gitlab-outputs.json
+validation-report-*.txt
+cdk.context.json
+
+# CDK
+*.swp
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Parcel default cache directory
+.parcel-cache
+
+# npm
+npm-debug.log*
+.npm
+
+# Yarn
+yarn-error.log
+.yarn-cache
+.yarn-integrity
+
+# dotenv environment variables file
+.env*
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test files
+test_*.py
+test_*.js
+.venv/
+TEST_RESULTS.md
+deployment/cdk/lambda-layers/otel-sdk/python/

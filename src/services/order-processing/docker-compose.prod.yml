@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  # Order Processing Service - Production Configuration
+  order-processing:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_NAME=order-processing-service
+      - DEBUG=false
+      - PORT=8000
+      - MONGODB_URL=${MONGODB_URL}
+      - MONGODB_DATABASE=orders
+      - PRODUCT_SERVICE_URL=${PRODUCT_SERVICE_URL}
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
+      - LOG_LEVEL=INFO
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - CLOUDWATCH_LOG_GROUP=/aws/ecs/order-processing
+    networks:
+      - order-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '1.0'
+          memory: 512M
+    logging:
+      driver: awslogs
+      options:
+        awslogs-group: /aws/ecs/order-processing
+        awslogs-region: ${AWS_REGION:-us-east-1}
+        awslogs-stream-prefix: order-processing
+
+networks:
+  order-network:
+    driver: bridge

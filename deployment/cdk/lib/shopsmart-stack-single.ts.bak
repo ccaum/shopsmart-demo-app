@@ -1,0 +1,136 @@
+import * as cdk from 'aws-cdk-lib';
+import { Construct } from 'constructs';
+import { VpcConstruct } from './constructs/vpc-construct';
+import { ProductCatalogConstruct } from './constructs/product-catalog-construct';
+import { OrderProcessingConstruct } from './constructs/order-processing-construct';
+import { UserAuthConstruct } from './constructs/user-auth-construct';
+
+export interface ShopSmartStackProps extends cdk.StackProps {
+  projectName: string;
+  environment: string;
+  vpcCidr: string;
+  availabilityZones: string[];
+  
+  // Product Catalog Service
+  ec2InstanceType: string;
+  rdsInstanceType: string;
+  elasticacheNodeType: string;
+  asgMinSize: number;
+  asgMaxSize: number;
+  asgDesiredCapacity: number;
+  
+  // Order Processing Service
+  eksNodeInstanceType: string;
+  eksMinNodes: number;
+  eksMaxNodes: number;
+  eksDesiredNodes: number;
+  mongodbCpuLimit: string;
+  mongodbMemoryLimit: string;
+  mongodbStorageSize: string;
+  
+  // User Authentication Service
+  dynamodbReadCapacity: number;
+  dynamodbWriteCapacity: number;
+  lambdaLoginMemory: number;
+}
+
+export class ShopSmartStack extends cdk.Stack {
+  constructor(scope: Construct, id: string, props: ShopSmartStackProps) {
+    super(scope, id, props);
+
+    // Create VPC and networking components
+    const vpc = new VpcConstruct(this, 'VPC', {
+      vpcCidr: props.vpcCidr,
+      availabilityZones: props.availabilityZones,
+      projectName: props.projectName,
+      environment: props.environment,
+    });
+
+    // Product Catalog Service
+    const productCatalog = new ProductCatalogConstruct(this, 'ProductCatalog', {
+      vpc: vpc.vpc,
+      publicSubnets: vpc.publicSubnets,
+      privateAppSubnets: vpc.privateAppSubnets,
+      privateDataSubnets: vpc.privateDataSubnets,
+      availabilityZones: props.availabilityZones,
+      projectName: props.projectName,
+      environment: props.environment,
+      
+      // Deliberately undersized RDS instance to match the IOPS limits issue
+      rdsInstanceType: props.rdsInstanceType,
+      
+      // Deliberately oversized EC2 instances to match the underutilization issue
+      ec2InstanceType: props.ec2InstanceType,
+      
+      // Deliberately oversized ElastiCache nodes
+      elasticacheNodeType: props.elasticacheNodeType,
+      
+      // Min instances set high to match overprovisioning issue
+      asgMinSize: props.asgMinSize,
+      asgMaxSize: props.asgMaxSize,
+      asgDesiredCapacity: props.asgDesiredCapacity,
+    });
+
+    // Order Processing Service
+    const orderProcessing = new OrderProcessingConstruct(this, 'OrderProcessing', {
+      vpc: vpc.vpc,
+      publicSubnets: vpc.publicSubnets,
+      privateAppSubnets: vpc.privateAppSubnets,
+      availabilityZones: props.availabilityZones,
+      projectName: props.projectName,
+      environment: props.environment,
+      
+      // Deliberately oversized EKS nodes to match underutilization issue
+      eksNodeInstanceType: props.eksNodeInstanceType,
+      eksMinNodes: props.eksMinNodes,
+      eksMaxNodes: props.eksMaxNodes,
+      eksDesiredNodes: props.eksDesiredNodes,
+      
+      // Deliberately oversized MongoDB resources
+      mongodbCpuLimit: props.mongodbCpuLimit,
+      mongodbMemoryLimit: props.mongodbMemoryLimit,
+      mongodbStorageSize: props.mongodbStorageSize,
+    });
+
+    // User Authentication Service
+    const userAuth = new UserAuthConstruct(this, 'UserAuth', {
+      vpc: vpc.vpc,
+      privateAppSubnets: vpc.privateAppSubnets,
+      projectName: props.projectName,
+      environment: props.environment,
+      
+      // Deliberately undersized DynamoDB capacity to match throttling issues
+      dynamodbReadCapacity: props.dynamodbReadCapacity,
+      dynamodbWriteCapacity: props.dynamodbWriteCapacity,
+      
+      // Deliberately high memory for Lambda to match overprovisioning
+      lambdaLoginMemory: props.lambdaLoginMemory,
+    });
+
+    // Output important endpoints and ARNs
+    new cdk.CfnOutput(this, 'ProductCatalogALBDnsName', {
+      value: productCatalog.albDnsName,
+      description: 'DNS name of the Product Catalog ALB',
+    });
+
+    new cdk.CfnOutput(this, 'ProductCatalogRdsEndpoint', {
+      value: productCatalog.rdsEndpoint,
+      description: 'Endpoint of the Product Catalog RDS instance',
+    });
+
+    new cdk.CfnOutput(this, 'ProductCatalogRedisEndpoint', {
+      value: productCatalog.redisEndpoint,
+      description: 'Endpoint of the Product Catalog Redis cluster',
+    });
+
+    new cdk.CfnOutput(this, 'OrderProcessingEksClusterName', {
+      value: orderProcessing.eksClusterName,
+      description: 'Name of the EKS cluster for Order Processing',
+    });
+
+    new cdk.CfnOutput(this, 'UserAuthApiGatewayUrl', {
+      value: userAuth.apiGatewayUrl,
+      description: 'URL of the User Authentication API Gateway',
+    });
+  }
+}

@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  # Order Processing Service
+  order-processing:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_NAME=order-processing-service
+      - DEBUG=true
+      - PORT=8000
+      - MONGODB_URL=mongodb://mongodb:27017/orders
+      - MONGODB_DATABASE=orders
+      - PRODUCT_SERVICE_URL=http://host.docker.internal:5000
+      - AUTH_SERVICE_URL=https://api.gateway.url/auth
+      - LOG_LEVEL=INFO
+      - AWS_REGION=us-east-1
+    depends_on:
+      - mongodb
+    networks:
+      - order-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=orders
+    volumes:
+      - mongodb_data:/data/db
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    networks:
+      - order-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # MongoDB Express (for development/debugging)
+  mongo-express:
+    image: mongo-express:1.0.0
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+      - ME_CONFIG_MONGODB_PORT=27017
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=admin123
+    depends_on:
+      - mongodb
+    networks:
+      - order-network
+    restart: unless-stopped
+    profiles:
+      - debug
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  order-network:
+    driver: bridge

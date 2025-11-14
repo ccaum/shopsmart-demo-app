@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://k1a1cujgk9.execute-api.us-west-2.amazonaws.com/v1 http://ShopSm-Produ-UfKCNxyEmIgv-385919621.us-west-2.elb.amazonaws.com http://internal-shopsmart-prod-order-proc-1426236774.us-west-2.elb.amazonaws.com;">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShopSmart - Product Catalog</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">ShopSmart</h1>
+            <nav class="nav">
+                <a href="#" id="home-link">Home</a>
+                <a href="#" id="cart-link">Cart (<span id="cart-count">0</span>)</a>
+                <a href="#" id="orders-link" class="hidden">Orders</a>
+                <div class="auth-section">
+                    <span id="user-info" class="hidden"></span>
+                    <button id="login-btn" class="btn btn-primary">Login</button>
+                    <button id="register-btn" class="btn btn-secondary">Register</button>
+                    <button id="logout-btn" class="btn btn-secondary hidden">Logout</button>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <!-- Search and Filter Section -->
+            <section class="search-section">
+                <div class="search-controls">
+                    <input type="text" id="search-input" placeholder="Search products..." class="search-input">
+                    <button id="search-btn" class="btn btn-primary">Search</button>
+                    <select id="category-filter" class="category-select">
+                        <option value="">All Categories</option>
+                    </select>
+                </div>
+            </section>
+
+            <!-- Product Grid Section -->
+            <section class="products-section">
+                <div id="loading" class="loading hidden">Loading products...</div>
+                <div id="error-message" class="error-message hidden"></div>
+                <div id="products-grid" class="products-grid"></div>
+            </section>
+
+            <!-- Pagination Section -->
+            <section class="pagination-section">
+                <div id="pagination" class="pagination hidden">
+                    <button id="prev-page" class="btn btn-secondary" disabled>Previous</button>
+                    <span id="page-info">Page 1 of 1</span>
+                    <button id="next-page" class="btn btn-secondary" disabled>Next</button>
+                </div>
+            </section>
+
+            <!-- Shopping Cart Section -->
+            <section id="cart-section" class="cart-section hidden">
+                <div class="cart-header">
+                    <h2>Shopping Cart</h2>
+                    <button id="back-to-products" class="btn btn-secondary">← Back to Products</button>
+                </div>
+                
+                <div id="cart-empty" class="cart-empty hidden">
+                    <div class="empty-cart-message">
+                        <h3>Your cart is empty</h3>
+                        <p>Add some products to get started!</p>
+                        <button id="continue-shopping" class="btn btn-primary">Continue Shopping</button>
+                    </div>
+                </div>
+                
+                <div id="cart-content" class="cart-content hidden">
+                    <div class="cart-items">
+                        <div id="cart-items-list" class="cart-items-list">
+                            <!-- Cart items will be populated here -->
+                        </div>
+                    </div>
+                    
+                    <div class="cart-summary">
+                        <div class="summary-section">
+                            <h3>Order Summary</h3>
+                            <div class="summary-line">
+                                <span>Subtotal (<span id="cart-item-count">0</span> items):</span>
+                                <span id="cart-subtotal">$0.00</span>
+                            </div>
+                            <div class="summary-line">
+                                <span>Shipping:</span>
+                                <span id="cart-shipping">Free</span>
+                            </div>
+                            <div class="summary-line total-line">
+                                <span>Total:</span>
+                                <span id="cart-total">$0.00</span>
+                            </div>
+                            <div class="cart-actions">
+                                <button id="clear-cart-btn" class="btn btn-secondary">Clear Cart</button>
+                                <button id="checkout-btn" class="btn btn-primary">Proceed to Checkout</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="cart-loading" class="loading hidden">Loading cart...</div>
+                <div id="cart-error" class="error-message hidden"></div>
+            </section>
+
+            <!-- Checkout Section -->
+            <section id="checkout-section" class="checkout-section hidden">
+                <div class="checkout-header">
+                    <h2>Checkout</h2>
+                    <button id="back-to-cart" class="btn btn-secondary">← Back to Cart</button>
+                </div>
+                
+                <div class="checkout-content">
+                    <div class="checkout-form-container">
+                        <form id="checkout-form" class="checkout-form">
+                            <div class="form-section">
+                                <h3>Shipping Address</h3>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="checkout-street">Street Address *</label>
+                                        <input type="text" id="checkout-street" name="street" required maxlength="200">
+                                        <span class="error-text" id="checkout-street-error"></span>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="checkout-city">City *</label>
+                                        <input type="text" id="checkout-city" name="city" required maxlength="100">
+                                        <span class="error-text" id="checkout-city-error"></span>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="checkout-state">State *</label>
+                                        <select id="checkout-state" name="state" required>
+                                            <option value="">Select State</option>
+                                            <option value="AL">Alabama</option>
+                                            <option value="AK">Alaska</option>
+                                            <option value="AZ">Arizona</option>
+                                            <option value="AR">Arkansas</option>
+                                            <option value="CA">California</option>
+                                            <option value="CO">Colorado</option>
+                                            <option value="CT">Connecticut</option>
+                                            <option value="DE">Delaware</option>
+                                            <option value="FL">Florida</option>
+                                            <option value="GA">Georgia</option>
+                                            <option value="HI">Hawaii</option>
+                                            <option value="ID">Idaho</option>
+                                            <option value="IL">Illinois</option>
+                                            <option value="IN">Indiana</option>
+                                            <option value="IA">Iowa</option>
+                                            <option value="KS">Kansas</option>
+                                            <option value="KY">Kentucky</option>
+                                            <option value="LA">Louisiana</option>
+                                            <option value="ME">Maine</option>
+                                            <option value="MD">Maryland</option>
+                                            <option value="MA">Massachusetts</option>
+                                            <option value="MI">Michigan</option>
+                                            <option value="MN">Minnesota</option>
+                                            <option value="MS">Mississippi</option>
+                                            <option value="MO">Missouri</option>
+                                            <option value="MT">Montana</option>
+                                            <option value="NE">Nebraska</option>
+                                            <option value="NV">Nevada</option>
+                                            <option value="NH">New Hampshire</option>
+                                            <option value="NJ">New Jersey</option>
+                                            <option value="NM">New Mexico</option>
+                                            <option value="NY">New York</option>
+                                            <option value="NC">North Carolina</option>
+                                            <option value="ND">North Dakota</option>
+                                            <option value="OH">Ohio</option>
+                                            <option value="OK">Oklahoma</option>
+                                            <option value="OR">Oregon</option>
+                                            <option value="PA">Pennsylvania</option>
+                                            <option value="RI">Rhode Island</option>
+                                            <option value="SC">South Carolina</option>
+                                            <option value="SD">South Dakota</option>
+                                            <option value="TN">Tennessee</option>
+                                            <option value="TX">Texas</option>
+                                            <option value="UT">Utah</option>
+                                            <option value="VT">Vermont</option>
+                                            <option value="VA">Virginia</option>
+                                            <option value="WA">Washington</option>
+                                            <option value="WV">West Virginia</option>
+                                            <option value="WI">Wisconsin</option>
+                                            <option value="WY">Wyoming</option>
+                                        </select>
+                                        <span class="error-text" id="checkout-state-error"></span>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="checkout-zipcode">ZIP Code *</label>
+                                        <input type="text" id="checkout-zipcode" name="zipCode" required pattern="^\d{5}(-\d{4})?$" maxlength="10">
+                                        <span class="error-text" id="checkout-zipcode-error"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button type="button" id="cancel-checkout" class="btn btn-secondary">Cancel</button>
+                                <button type="submit" id="place-order-btn" class="btn btn-primary">
+                                    <span class="btn-text">Place Order</span>
+                                    <span class="btn-spinner hidden">Processing...</span>
+                                </button>
+                            </div>
+                            
+                            <div class="form-group">
+                                <span class="error-text" id="checkout-form-error"></span>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="checkout-summary">
+                        <div class="summary-section">
+                            <h3>Order Summary</h3>
+                            <div id="checkout-items-list" class="checkout-items-list">
+                                <!-- Checkout items will be populated here -->
+                            </div>
+                            <div class="summary-totals">
+                                <div class="summary-line">
+                                    <span>Subtotal (<span id="checkout-item-count">0</span> items):</span>
+                                    <span id="checkout-subtotal">$0.00</span>
+                                </div>
+                                <div class="summary-line">
+                                    <span>Shipping:</span>
+                                    <span id="checkout-shipping">Free</span>
+                                </div>
+                                <div class="summary-line total-line">
+                                    <span>Total:</span>
+                                    <span id="checkout-total">$0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="checkout-loading" class="loading hidden">Processing order...</div>
+                <div id="checkout-error" class="error-message hidden"></div>
+            </section>
+
+            <!-- Order Confirmation Section -->
+            <section id="order-confirmation-section" class="order-confirmation-section hidden">
+                <div class="confirmation-content">
+                    <div class="confirmation-header">
+                        <div class="success-icon">✓</div>
+                        <h2>Order Confirmed!</h2>
+                        <p>Thank you for your order. We'll send you a confirmation email shortly.</p>
+                    </div>
+                    
+                    <div class="order-details">
+                        <div class="order-info">
+                            <h3>Order Information</h3>
+                            <div class="info-row">
+                                <span>Order Number:</span>
+                                <span id="confirmation-order-id">-</span>
+                            </div>
+                            <div class="info-row">
+                                <span>Order Date:</span>
+                                <span id="confirmation-order-date">-</span>
+                            </div>
+                            <div class="info-row">
+                                <span>Total Amount:</span>
+                                <span id="confirmation-total-amount">$0.00</span>
+                            </div>
+                        </div>
+                        
+                        <div class="shipping-info">
+                            <h3>Shipping Address</h3>
+                            <div id="confirmation-shipping-address">
+                                <!-- Shipping address will be populated here -->
+                            </div>
+                        </div>
+                        
+                        <div class="order-items">
+                            <h3>Items Ordered</h3>
+                            <div id="confirmation-items-list">
+                                <!-- Order items will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="confirmation-actions">
+                        <button id="view-order-history" class="btn btn-secondary">View Order History</button>
+                        <button id="continue-shopping-confirmation" class="btn btn-primary">Continue Shopping</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Order History Section -->
+            <section id="order-history-section" class="order-history-section hidden">
+                <div class="order-history-header">
+                    <h2>Order History</h2>
+                    <button id="back-to-products-from-history" class="btn btn-secondary">← Back to Products</button>
+                </div>
+                
+                <div id="order-history-empty" class="order-history-empty hidden">
+                    <div class="empty-history-message">
+                        <h3>No orders yet</h3>
+                        <p>You haven't placed any orders yet. Start shopping to see your order history here!</p>
+                        <button id="start-shopping" class="btn btn-primary">Start Shopping</button>
+                    </div>
+                </div>
+                
+                <div id="order-history-content" class="order-history-content hidden">
+                    <div id="order-history-list" class="order-history-list">
+                        <!-- Order history will be populated here -->
+                    </div>
+                    
+                    <div id="order-history-pagination" class="pagination hidden">
+                        <button id="prev-orders-page" class="btn btn-secondary" disabled>Previous</button>
+                        <span id="orders-page-info">Page 1 of 1</span>
+                        <button id="next-orders-page" class="btn btn-secondary" disabled>Next</button>
+                    </div>
+                </div>
+                
+                <div id="order-history-loading" class="loading hidden">Loading order history...</div>
+                <div id="order-history-error" class="error-message hidden"></div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Product Detail Modal -->
+    <div id="product-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="product-detail" class="product-detail">
+                <!-- Product details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="modal hidden">
+        <div class="modal-content auth-modal">
+            <span class="close">&times;</span>
+            <h2>Login to ShopSmart</h2>
+            <form id="login-form" class="auth-form">
+                <div class="form-group">
+                    <label for="login-email">Email:</label>
+                    <input type="email" id="login-email" name="email" required>
+                    <span class="error-text" id="login-email-error"></span>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password:</label>
+                    <input type="password" id="login-password" name="password" required>
+                    <span class="error-text" id="login-password-error"></span>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary auth-submit-btn">
+                        <span class="btn-text">Login</span>
+                        <span class="btn-spinner hidden">Logging in...</span>
+                    </button>
+                </div>
+                <div class="form-group">
+                    <span class="error-text" id="login-form-error"></span>
+                </div>
+                <div class="auth-switch">
+                    Don't have an account? <a href="#" id="switch-to-register">Register here</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div id="register-modal" class="modal hidden">
+        <div class="modal-content auth-modal">
+            <span class="close">&times;</span>
+            <h2>Register for ShopSmart</h2>
+            <form id="register-form" class="auth-form">
+                <div class="form-group">
+                    <label for="register-email">Email:</label>
+                    <input type="email" id="register-email" name="email" required>
+                    <span class="error-text" id="register-email-error"></span>
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Password:</label>
+                    <input type="password" id="register-password" name="password" required>
+                    <span class="error-text" id="register-password-error"></span>
+                </div>
+                <div class="form-group">
+                    <label for="register-confirm-password">Confirm Password:</label>
+                    <input type="password" id="register-confirm-password" name="confirmPassword" required>
+                    <span class="error-text" id="register-confirm-password-error"></span>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary auth-submit-btn">
+                        <span class="btn-text">Register</span>
+                        <span class="btn-spinner hidden">Creating account...</span>
+                    </button>
+                </div>
+                <div class="form-group">
+                    <span class="error-text" id="register-form-error"></span>
+                </div>
+                <div class="auth-switch">
+                    Already have an account? <a href="#" id="switch-to-login">Login here</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/checkout.js"></script>
+    <script src="js/products.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

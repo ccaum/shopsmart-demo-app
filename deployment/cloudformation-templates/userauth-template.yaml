@@ -1,0 +1,478 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'ShopSmart User Authentication Service - Parameterized CloudFormation Template'
+
+# ==============================================================================
+# PARAMETERS - Make template portable and reusable
+# ==============================================================================
+Parameters:
+  Environment:
+    Type: String
+    Default: prod
+    AllowedValues: [dev, staging, prod]
+    Description: Environment name for resource naming and tagging
+  
+  ProjectName:
+    Type: String
+    Default: shopsmart
+    Description: Project name for resource naming
+  
+  StackSuffix:
+    Type: String
+    Default: cfn
+    Description: Suffix to add to resource names to avoid conflicts (e.g., 'cfn', 'test')
+  
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC ID where Lambda functions will run
+  
+  PrivateSubnet1Id:
+    Type: AWS::EC2::Subnet::Id
+    Description: First private subnet ID for Lambda functions
+  
+  PrivateSubnet2Id:
+    Type: AWS::EC2::Subnet::Id
+    Description: Second private subnet ID for Lambda functions
+  
+  PrivateSubnet3Id:
+    Type: AWS::EC2::Subnet::Id
+    Description: Third private subnet ID for Lambda functions
+  
+  # DynamoDB Configuration
+  UserTableReadCapacity:
+    Type: Number
+    Default: 5
+    MinValue: 1
+    MaxValue: 1000
+    Description: Read capacity units for Users table
+  
+  UserTableWriteCapacity:
+    Type: Number
+    Default: 5
+    MinValue: 1
+    MaxValue: 1000
+    Description: Write capacity units for Users table
+  
+  SessionTableReadCapacity:
+    Type: Number
+    Default: 5
+    MinValue: 1
+    MaxValue: 1000
+    Description: Read capacity units for Sessions table
+  
+  SessionTableWriteCapacity:
+    Type: Number
+    Default: 5
+    MinValue: 1
+    MaxValue: 1000
+    Description: Write capacity units for Sessions table
+  
+  # Lambda Configuration
+  LambdaMemorySize:
+    Type: Number
+    Default: 512
+    AllowedValues: [128, 256, 512, 1024, 2048, 3008]
+    Description: Memory size for Lambda functions (MB)
+  
+  LambdaTimeout:
+    Type: Number
+    Default: 30
+    MinValue: 3
+    MaxValue: 900
+    Description: Timeout for Lambda functions (seconds)
+  
+  # Lambda Code Location
+  LambdaCodeBucket:
+    Type: String
+    Description: S3 bucket containing Lambda deployment packages
+  
+  LambdaCodeKey:
+    Type: String
+    Default: lambda/auth-service.zip
+    Description: S3 key for Lambda deployment package
+  
+  # OpenTelemetry Configuration (Optional)
+  DynatraceEndpointSSMParameter:
+    Type: String
+    Default: /shopsmart/prod/opentelemetry/endpoint
+    Description: SSM parameter path for Dynatrace endpoint
+  
+  DynatraceTokenSSMParameter:
+    Type: String
+    Default: /shopsmart/prod/opentelemetry/api-token
+    Description: SSM parameter path for Dynatrace API token
+  
+  # Lambda Layer ARN for OpenTelemetry
+  OTelLambdaLayerArn:
+    Type: String
+    Default: arn:aws:lambda:us-west-2:901920570463:layer:aws-otel-python-amd64-ver-1-20-0:1
+    Description: ARN of AWS OpenTelemetry Lambda Layer
+
+# ==============================================================================
+# RESOURCES
+# ==============================================================================
+Resources:
+  
+  # --------------------------------------------------------------------------
+  # DynamoDB Tables
+  # --------------------------------------------------------------------------
+  
+  UserTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${ProjectName}-${Environment}-${StackSuffix}-users'
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: email
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: EmailIndex
+          KeySchema:
+            - AttributeName: email
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: !Ref UserTableReadCapacity
+            WriteCapacityUnits: !Ref UserTableWriteCapacity
+      ProvisionedThroughput:
+        ReadCapacityUnits: !Ref UserTableReadCapacity
+        WriteCapacityUnits: !Ref UserTableWriteCapacity
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Service
+          Value: UserAuthentication
+        - Key: ManagedBy
+          Value: CloudFormation
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+  
+  SessionTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${ProjectName}-${Environment}-${StackSuffix}-sessions'
+      AttributeDefinitions:
+        - AttributeName: sessionId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: sessionId
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: !Ref SessionTableReadCapacity
+        WriteCapacityUnits: !Ref SessionTableWriteCapacity
+      SSESpecification:
+        SSEEnabled: true
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Service
+          Value: UserAuthentication
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+  
+  CartTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${ProjectName}-${Environment}-${StackSuffix}-carts'
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: !Ref SessionTableReadCapacity
+        WriteCapacityUnits: !Ref SessionTableWriteCapacity
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Service
+          Value: UserAuthentication
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+  
+  # --------------------------------------------------------------------------
+  # IAM Roles for Lambda Functions
+  # --------------------------------------------------------------------------
+  
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ProjectName}-${Environment}-${StackSuffix}-userauth-lambda-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+      Policies:
+        - PolicyName: DynamoDBAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource:
+                  - !GetAtt UserTable.Arn
+                  - !Sub '${UserTable.Arn}/index/*'
+                  - !GetAtt SessionTable.Arn
+                  - !GetAtt CartTable.Arn
+        - PolicyName: SSMParameterAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                  - ssm:GetParameters
+                Resource:
+                  - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${DynatraceEndpointSSMParameter}'
+                  - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${DynatraceTokenSSMParameter}'
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+  
+  # --------------------------------------------------------------------------
+  # Security Group for Lambda Functions
+  # --------------------------------------------------------------------------
+  
+  LambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub '${ProjectName}-${Environment}-${StackSuffix}-userauth-lambda-sg'
+      GroupDescription: Security group for UserAuth Lambda functions
+      VpcId: !Ref VpcId
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: HTTPS outbound
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+  
+  # --------------------------------------------------------------------------
+  # Lambda Functions
+  # --------------------------------------------------------------------------
+  
+  RegisterFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-${StackSuffix}-auth-register'
+      Runtime: python3.11
+      Handler: lambda_function.register_handler
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Ref LambdaCodeKey
+      Role: !GetAtt LambdaExecutionRole.Arn
+      MemorySize: !Ref LambdaMemorySize
+      Timeout: !Ref LambdaTimeout
+      Environment:
+        Variables:
+          USER_TABLE_NAME: !Ref UserTable
+          SESSION_TABLE_NAME: !Ref SessionTable
+          DEPLOYMENT_ENVIRONMENT: !Ref Environment
+          OTEL_EXPORTER_OTLP_ENDPOINT_PARAM: !Ref DynatraceEndpointSSMParameter
+          OTEL_EXPORTER_OTLP_TOKEN_PARAM: !Ref DynatraceTokenSSMParameter
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaSecurityGroup
+        SubnetIds:
+          - !Ref PrivateSubnet1Id
+          - !Ref PrivateSubnet2Id
+          - !Ref PrivateSubnet3Id
+      Layers:
+        - !Ref OTelLambdaLayerArn
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+  
+  LoginFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-${StackSuffix}-auth-login'
+      Runtime: python3.11
+      Handler: lambda_function.login_handler
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Ref LambdaCodeKey
+      Role: !GetAtt LambdaExecutionRole.Arn
+      MemorySize: !Ref LambdaMemorySize
+      Timeout: !Ref LambdaTimeout
+      Environment:
+        Variables:
+          USER_TABLE_NAME: !Ref UserTable
+          SESSION_TABLE_NAME: !Ref SessionTable
+          DEPLOYMENT_ENVIRONMENT: !Ref Environment
+          OTEL_EXPORTER_OTLP_ENDPOINT_PARAM: !Ref DynatraceEndpointSSMParameter
+          OTEL_EXPORTER_OTLP_TOKEN_PARAM: !Ref DynatraceTokenSSMParameter
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaSecurityGroup
+        SubnetIds:
+          - !Ref PrivateSubnet1Id
+          - !Ref PrivateSubnet2Id
+          - !Ref PrivateSubnet3Id
+      Layers:
+        - !Ref OTelLambdaLayerArn
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+  
+  LogoutFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-${StackSuffix}-auth-logout'
+      Runtime: python3.11
+      Handler: lambda_function.logout_handler
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Ref LambdaCodeKey
+      Role: !GetAtt LambdaExecutionRole.Arn
+      MemorySize: !Ref LambdaMemorySize
+      Timeout: !Ref LambdaTimeout
+      Environment:
+        Variables:
+          SESSION_TABLE_NAME: !Ref SessionTable
+          DEPLOYMENT_ENVIRONMENT: !Ref Environment
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaSecurityGroup
+        SubnetIds:
+          - !Ref PrivateSubnet1Id
+          - !Ref PrivateSubnet2Id
+          - !Ref PrivateSubnet3Id
+      Layers:
+        - !Ref OTelLambdaLayerArn
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: !Ref ProjectName
+
+# ==============================================================================
+# OUTPUTS
+# ==============================================================================
+Outputs:
+  UserTableName:
+    Description: Name of the Users DynamoDB table
+    Value: !Ref UserTable
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-${StackSuffix}-UserTableName'
+  
+  SessionTableName:
+    Description: Name of the Sessions DynamoDB table
+    Value: !Ref SessionTable
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-${StackSuffix}-SessionTableName'
+  
+  CartTableName:
+    Description: Name of the Carts DynamoDB table
+    Value: !Ref CartTable
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-${StackSuffix}-CartTableName'
+  
+  LambdaExecutionRoleArn:
+    Description: ARN of the Lambda execution role
+    Value: !GetAtt LambdaExecutionRole.Arn
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-${StackSuffix}-UserAuthLambdaRoleArn'
+  
+  RegisterFunctionArn:
+    Description: ARN of the Register Lambda function
+    Value: !GetAtt RegisterFunction.Arn
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-${StackSuffix}-RegisterFunctionArn'
+  
+  LoginFunctionArn:
+    Description: ARN of the Login Lambda function
+    Value: !GetAtt LoginFunction.Arn
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-${StackSuffix}-LoginFunctionArn'
+  
+  LogoutFunctionArn:
+    Description: ARN of the Logout Lambda function
+    Value: !GetAtt LogoutFunction.Arn
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-${StackSuffix}-LogoutFunctionArn'
+
+# ==============================================================================
+# METADATA - Parameter Grouping for Console
+# ==============================================================================
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Environment Configuration
+        Parameters:
+          - Environment
+          - ProjectName
+      - Label:
+          default: Network Configuration
+        Parameters:
+          - VpcId
+          - PrivateSubnet1Id
+          - PrivateSubnet2Id
+          - PrivateSubnet3Id
+      - Label:
+          default: DynamoDB Configuration
+        Parameters:
+          - UserTableReadCapacity
+          - UserTableWriteCapacity
+          - SessionTableReadCapacity
+          - SessionTableWriteCapacity
+      - Label:
+          default: Lambda Configuration
+        Parameters:
+          - LambdaMemorySize
+          - LambdaTimeout
+          - OTelLambdaLayerArn
+      - Label:
+          default: Observability Configuration
+        Parameters:
+          - DynatraceEndpointSSMParameter
+          - DynatraceTokenSSMParameter
+    ParameterLabels:
+      Environment:
+        default: Environment Name
+      ProjectName:
+        default: Project Name
+      VpcId:
+        default: VPC ID

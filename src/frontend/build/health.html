@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://k1a1cujgk9.execute-api.us-west-2.amazonaws.com/v1 http://ShopSm-Produ-UfKCNxyEmIgv-385919621.us-west-2.elb.amazonaws.com http://internal-shopsmart-prod-order-proc-1426236774.us-west-2.elb.amazonaws.com;">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Check</title>
+</head>
+<body>
+    <h1>Frontend Health Check</h1>
+    <div id="health-status">
+        <p>Status: <span id="status">Checking...</span></p>
+        <p>Build Time: <span id="build-time">Loading...</span></p>
+        <p>Environment: <span id="environment">Loading...</span></p>
+        <div id="services">
+            <h3>Service Connectivity:</h3>
+            <ul id="service-list">
+                <li>Loading...</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Load deployment manifest
+        fetch('/deployment-manifest.json')
+            .then(response => response.json())
+            .then(manifest => {
+                document.getElementById('build-time').textContent = manifest.buildTime;
+                document.getElementById('environment').textContent = manifest.environment;
+                
+                // Test service connectivity
+                const serviceList = document.getElementById('service-list');
+                serviceList.innerHTML = '';
+                
+                Object.entries(manifest.services).forEach(([serviceName, serviceUrl]) => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `${serviceName}: <span id="${serviceName}-status">Testing...</span>`;
+                    serviceList.appendChild(li);
+                    
+                    // Test service connectivity (basic ping)
+                    fetch(serviceUrl + '/health', { method: 'HEAD', mode: 'no-cors' })
+                        .then(() => {
+                            document.getElementById(`${serviceName}-status`).innerHTML = 
+                                '<span style="color: green;">✓ Reachable</span>';
+                        })
+                        .catch(() => {
+                            document.getElementById(`${serviceName}-status`).innerHTML = 
+                                '<span style="color: red;">✗ Unreachable</span>';
+                        });
+                });
+                
+                document.getElementById('status').innerHTML = '<span style="color: green;">✓ Healthy</span>';
+            })
+            .catch(error => {
+                document.getElementById('status').innerHTML = '<span style="color: red;">✗ Error</span>';
+                document.getElementById('build-time').textContent = 'Unknown';
+                document.getElementById('environment').textContent = 'Unknown';
+                console.error('Health check failed:', error);
+            });
+    </script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+{
+    "CallerReference": "frontend-distribution-$(date +%s)",
+    "Comment": "CloudFront distribution for shopping cart frontend",
+    "DefaultCacheBehavior": {
+        "TargetOriginId": "S3-your-frontend-bucket",
+        "ViewerProtocolPolicy": "redirect-to-https",
+        "TrustedSigners": {
+            "Enabled": false,
+            "Quantity": 0
+        },
+        "ForwardedValues": {
+            "QueryString": false,
+            "Cookies": {
+                "Forward": "none"
+            },
+            "Headers": {
+                "Quantity": 3,
+                "Items": [
+                    "Origin",
+                    "Access-Control-Request-Method",
+                    "Access-Control-Request-Headers"
+                ]
+            }
+        },
+        "MinTTL": 0,
+        "DefaultTTL": 86400,
+        "MaxTTL": 31536000,
+        "Compress": true
+    },
+    "Origins": {
+        "Quantity": 1,
+        "Items": [
+            {
+                "Id": "S3-your-frontend-bucket",
+                "DomainName": "your-frontend-bucket.s3.amazonaws.com",
+                "S3OriginConfig": {
+                    "OriginAccessIdentity": ""
+                }
+            }
+        ]
+    },
+    "Enabled": true,
+    "PriceClass": "PriceClass_100",
+    "DefaultRootObject": "index.html",
+    "CustomErrorResponses": {
+        "Quantity": 2,
+        "Items": [
+            {
+                "ErrorCode": 404,
+                "ResponsePagePath": "/index.html",
+                "ResponseCode": "200",
+                "ErrorCachingMinTTL": 300
+            },
+            {
+                "ErrorCode": 403,
+                "ResponsePagePath": "/index.html",
+                "ResponseCode": "200",
+                "ErrorCachingMinTTL": 300
+            }
+        ]
+    },
+    "WebACLId": "",
+    "HttpVersion": "http2",
+    "IsIPV6Enabled": true,
+    "ResponseHeadersPolicy": {
+        "ResponseHeadersPolicyConfig": {
+            "Name": "frontend-security-headers",
+            "Comment": "Security headers for frontend",
+            "SecurityHeadersConfig": {
+                "StrictTransportSecurity": {
+                    "AccessControlMaxAgeSec": 31536000,
+                    "IncludeSubdomains": true,
+                    "Override": true
+                },
+                "ContentTypeOptions": {
+                    "Override": true
+                },
+                "FrameOptions": {
+                    "FrameOption": "DENY",
+                    "Override": true
+                },
+                "ReferrerPolicy": {
+                    "ReferrerPolicy": "strict-origin-when-cross-origin",
+                    "Override": true
+                }
+            },
+            "CorsConfig": {
+                "AccessControlAllowCredentials": false,
+                "AccessControlAllowHeaders": {
+                    "Quantity": 4,
+                    "Items": [
+                        "Origin",
+                        "X-Requested-With",
+                        "Content-Type",
+                        "Accept"
+                    ]
+                },
+                "AccessControlAllowMethods": {
+                    "Quantity": 3,
+                    "Items": [
+                        "GET",
+                        "POST",
+                        "OPTIONS"
+                    ]
+                },
+                "AccessControlAllowOrigins": {
+                    "Quantity": 1,
+                    "Items": [
+                        "*"
+                    ]
+                },
+                "AccessControlExposeHeaders": {
+                    "Quantity": 0
+                },
+                "AccessControlMaxAgeSec": 86400,
+                "OriginOverride": true
+            }
+        }
+    }
+}

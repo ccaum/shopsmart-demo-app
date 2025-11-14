@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://k1a1cujgk9.execute-api.us-west-2.amazonaws.com/v1 http://ShopSm-Produ-UfKCNxyEmIgv-385919621.us-west-2.elb.amazonaws.com http://internal-shopsmart-prod-order-proc-1426236774.us-west-2.elb.amazonaws.com;">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication Test - ShopSmart</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">ShopSmart - Auth Test</h1>
+            <nav class="nav">
+                <div class="auth-section">
+                    <span id="user-info" class="hidden"></span>
+                    <button id="login-btn" class="btn btn-primary">Login</button>
+                    <button id="register-btn" class="btn btn-secondary">Register</button>
+                    <button id="logout-btn" class="btn btn-secondary hidden">Logout</button>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <h2>Authentication UI Test</h2>
+            <p>Click the Login or Register buttons to test the authentication modals.</p>
+            <p>This test page uses mock API responses for demonstration.</p>
+        </div>
+    </main>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="modal hidden">
+        <div class="modal-content auth-modal">
+            <span class="close">&times;</span>
+            <h2>Login to ShopSmart</h2>
+            <form id="login-form" class="auth-form">
+                <div class="form-group">
+                    <label for="login-email">Email:</label>
+                    <input type="email" id="login-email" name="email" required>
+                    <span class="error-text" id="login-email-error"></span>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password:</label>
+                    <input type="password" id="login-password" name="password" required>
+                    <span class="error-text" id="login-password-error"></span>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary auth-submit-btn">
+                        <span class="btn-text">Login</span>
+                        <span class="btn-spinner hidden">Logging in...</span>
+                    </button>
+                </div>
+                <div class="form-group">
+                    <span class="error-text" id="login-form-error"></span>
+                </div>
+                <div class="auth-switch">
+                    Don't have an account? <a href="#" id="switch-to-register">Register here</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div id="register-modal" class="modal hidden">
+        <div class="modal-content auth-modal">
+            <span class="close">&times;</span>
+            <h2>Register for ShopSmart</h2>
+            <form id="register-form" class="auth-form">
+                <div class="form-group">
+                    <label for="register-email">Email:</label>
+                    <input type="email" id="register-email" name="email" required>
+                    <span class="error-text" id="register-email-error"></span>
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Password:</label>
+                    <input type="password" id="register-password" name="password" required>
+                    <span class="error-text" id="register-password-error"></span>
+                </div>
+                <div class="form-group">
+                    <label for="register-confirm-password">Confirm Password:</label>
+                    <input type="password" id="register-confirm-password" name="confirmPassword" required>
+                    <span class="error-text" id="register-confirm-password-error"></span>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary auth-submit-btn">
+                        <span class="btn-text">Register</span>
+                        <span class="btn-spinner hidden">Creating account...</span>
+                    </button>
+                </div>
+                <div class="form-group">
+                    <span class="error-text" id="register-form-error"></span>
+                </div>
+                <div class="auth-switch">
+                    Already have an account? <a href="#" id="switch-to-login">Login here</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script>
+        // Mock API responses for testing
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options) {
+            console.log('Mock API call:', url, options);
+            
+            // Mock login response
+            if (url.includes('/auth/login')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({
+                        success: true,
+                        user: { email: 'test@example.com', id: '123' },
+                        sessionId: 'mock-session-123'
+                    })
+                });
+            }
+            
+            // Mock register response
+            if (url.includes('/auth/register')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({
+                        success: true,
+                        user: { email: 'test@example.com', id: '123' },
+                        sessionId: 'mock-session-123'
+                    })
+                });
+            }
+            
+            // Mock session validation
+            if (url.includes('/auth/validate')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({ valid: true })
+                });
+            }
+            
+            // Fallback to original fetch
+            return originalFetch.apply(this, arguments);
+        };
+    </script>
+    <script src="js/auth.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

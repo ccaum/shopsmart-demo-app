@@ -1,0 +1,60 @@
+{
+  "TableName": "shopsmart-dev-shopping-carts",
+  "AttributeDefinitions": [
+    {
+      "AttributeName": "cartId",
+      "AttributeType": "S"
+    },
+    {
+      "AttributeName": "userId",
+      "AttributeType": "S"
+    }
+  ],
+  "KeySchema": [
+    {
+      "AttributeName": "cartId",
+      "KeyType": "HASH"
+    }
+  ],
+  "GlobalSecondaryIndexes": [
+    {
+      "IndexName": "UserIdIndex",
+      "KeySchema": [
+        {
+          "AttributeName": "userId",
+          "KeyType": "HASH"
+        }
+      ],
+      "Projection": {
+        "ProjectionType": "ALL"
+      },
+      "ProvisionedThroughput": {
+        "ReadCapacityUnits": 5,
+        "WriteCapacityUnits": 5
+      }
+    }
+  ],
+  "BillingMode": "PROVISIONED",
+  "ProvisionedThroughput": {
+    "ReadCapacityUnits": 5,
+    "WriteCapacityUnits": 5
+  },
+  "TimeToLiveSpecification": {
+    "AttributeName": "ttl",
+    "Enabled": true
+  },
+  "Tags": [
+    {
+      "Key": "Environment",
+      "Value": "dev"
+    },
+    {
+      "Key": "Project",
+      "Value": "ShopSmart"
+    },
+    {
+      "Key": "Service",
+      "Value": "ShoppingCart"
+    }
+  ]
+}

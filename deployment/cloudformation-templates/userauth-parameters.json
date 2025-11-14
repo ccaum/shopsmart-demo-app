@@ -1,0 +1,62 @@
+[
+  {
+    "ParameterKey": "Environment",
+    "ParameterValue": "prod"
+  },
+  {
+    "ParameterKey": "ProjectName",
+    "ParameterValue": "shopsmart"
+  },
+  {
+    "ParameterKey": "StackSuffix",
+    "ParameterValue": "cfn"
+  },
+  {
+    "ParameterKey": "VpcId",
+    "ParameterValue": "REPLACE_WITH_VPC_ID"
+  },
+  {
+    "ParameterKey": "PrivateSubnet1Id",
+    "ParameterValue": "REPLACE_WITH_SUBNET1_ID"
+  },
+  {
+    "ParameterKey": "PrivateSubnet2Id",
+    "ParameterValue": "REPLACE_WITH_SUBNET2_ID"
+  },
+  {
+    "ParameterKey": "PrivateSubnet3Id",
+    "ParameterValue": "REPLACE_WITH_SUBNET3_ID"
+  },
+  {
+    "ParameterKey": "UserTableReadCapacity",
+    "ParameterValue": "5"
+  },
+  {
+    "ParameterKey": "UserTableWriteCapacity",
+    "ParameterValue": "5"
+  },
+  {
+    "ParameterKey": "SessionTableReadCapacity",
+    "ParameterValue": "5"
+  },
+  {
+    "ParameterKey": "SessionTableWriteCapacity",
+    "ParameterValue": "5"
+  },
+  {
+    "ParameterKey": "LambdaMemorySize",
+    "ParameterValue": "512"
+  },
+  {
+    "ParameterKey": "LambdaTimeout",
+    "ParameterValue": "30"
+  },
+  {
+    "ParameterKey": "LambdaCodeBucket",
+    "ParameterValue": "REPLACE_WITH_S3_BUCKET_NAME"
+  },
+  {
+    "ParameterKey": "LambdaCodeKey",
+    "ParameterValue": "lambda/auth-service.zip"
+  }
+]

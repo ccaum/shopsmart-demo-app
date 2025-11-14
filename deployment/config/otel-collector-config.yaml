@@ -1,0 +1,82 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+  
+  # AWS CloudWatch metrics receiver
+  awscloudwatch:
+    region: us-west-2
+    
+  # AWS X-Ray traces receiver  
+  awsxray:
+    endpoint: 0.0.0.0:2000
+    transport: udp
+
+processors:
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+    
+  resource:
+    attributes:
+    - key: service.name
+      value: ${OTEL_SERVICE_NAME:-shopsmart}
+      action: upsert
+    - key: service.version
+      value: ${OTEL_SERVICE_VERSION:-1.0.0}
+      action: upsert
+    - key: deployment.environment
+      value: ${DEPLOYMENT_ENVIRONMENT:-production}
+      action: upsert
+      
+  # Memory limiter to prevent OOM
+  memory_limiter:
+    limit_mib: 256
+
+exporters:
+  # Dynatrace OTLP exporter
+  otlp/dynatrace:
+    endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT}
+    headers:
+      Authorization: "Api-Token ${DYNATRACE_API_TOKEN}"
+    
+  # AWS CloudWatch exporter for metrics
+  awscloudwatchmetrics:
+    region: ${AWS_REGION:-us-west-2}
+    namespace: ${CLOUDWATCH_NAMESPACE:-ShopSmart/OpenTelemetry}
+    
+  # AWS X-Ray exporter for traces
+  awsxray:
+    region: ${AWS_REGION:-us-west-2}
+    
+  # Logging exporter for debugging
+  logging:
+    loglevel: info
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp, awsxray]
+      processors: [memory_limiter, batch, resource]
+      exporters: [otlp/dynatrace, awsxray]
+      
+    metrics:
+      receivers: [otlp, awscloudwatch]
+      processors: [memory_limiter, batch, resource]
+      exporters: [otlp/dynatrace, awscloudwatchmetrics]
+      
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, resource]
+      exporters: [otlp/dynatrace, logging]
+
+  extensions: [health_check, pprof, zpages]
+  
+  telemetry:
+    logs:
+      level: info
+    metrics:
+      address: 0.0.0.0:8888

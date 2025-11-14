@@ -1,0 +1,9 @@
+node_modules/
+cdk.out/
+*.d.ts
+coverage/
+dist/
+build/
+.aws-sam/
+.nyc_output/
+*.log

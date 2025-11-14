@@ -1,0 +1,45 @@
+# User Authentication Service Dependencies
+
+# Web framework
+Flask==2.3.3
+Flask-CORS==4.0.0
+
+# AWS SDK
+boto3==1.28.85
+botocore==1.31.85
+
+# Data handling
+python-dateutil==2.8.2
+
+# Security
+bcrypt==4.0.1
+PyJWT==2.8.0
+
+# Validation
+email-validator==2.0.0
+phonenumbers==8.13.22
+
+# Monitoring and logging
+structlog==23.1.0
+
+# Development and testing
+pytest==7.4.2
+pytest-flask==1.2.0
+pytest-mock==3.11.1
+moto==4.2.5
+
+# Code quality
+flake8==6.0.0
+black==23.7.0
+mypy==1.5.1
+
+# Performance
+gunicorn==21.2.0
+
+# OpenTelemetry dependencies
+opentelemetry-api==1.21.0
+opentelemetry-sdk==1.21.0
+opentelemetry-exporter-otlp-proto-http==1.21.0
+opentelemetry-instrumentation-flask==0.42b0
+opentelemetry-instrumentation-botocore==0.42b0
+opentelemetry-instrumentation-aws-lambda==0.42b0

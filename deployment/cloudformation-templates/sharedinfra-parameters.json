@@ -1,0 +1,30 @@
+[
+  {
+    "ParameterKey": "Environment",
+    "ParameterValue": "prod"
+  },
+  {
+    "ParameterKey": "ProjectName",
+    "ParameterValue": "shopsmart"
+  },
+  {
+    "ParameterKey": "StackSuffix",
+    "ParameterValue": "cfn"
+  },
+  {
+    "ParameterKey": "VpcCidr",
+    "ParameterValue": "10.1.0.0/16"
+  },
+  {
+    "ParameterKey": "AvailabilityZone1",
+    "ParameterValue": "us-west-2a"
+  },
+  {
+    "ParameterKey": "AvailabilityZone2",
+    "ParameterValue": "us-west-2b"
+  },
+  {
+    "ParameterKey": "AvailabilityZone3",
+    "ParameterValue": "us-west-2c"
+  }
+]
