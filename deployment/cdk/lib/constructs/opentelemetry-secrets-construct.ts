@@ -21,24 +21,31 @@ export class OpenTelemetrySecretsConstruct extends Construct {
     let dynatraceEndpoint = '';
     let dynatraceApiToken = '';
 
-    try {
-      const envContent = fs.readFileSync(envFilePath, 'utf8');
-      const envLines = envContent.split('\n');
-      
-      for (const line of envLines) {
-        const trimmedLine = line.trim();
-        if (trimmedLine.startsWith('DYNATRACE_ENDPOINT=')) {
-          dynatraceEndpoint = trimmedLine.split('=')[1];
-        } else if (trimmedLine.startsWith('DYNATRACE_API_TOKEN=')) {
-          dynatraceApiToken = trimmedLine.split('=')[1];
+    if (fs.existsSync(envFilePath)) {
+      try {
+        const envContent = fs.readFileSync(envFilePath, 'utf8');
+        const envLines = envContent.split('\n');
+        
+        for (const line of envLines) {
+          const trimmedLine = line.trim();
+          if (trimmedLine.startsWith('DYNATRACE_ENDPOINT=')) {
+            dynatraceEndpoint = trimmedLine.split('=')[1];
+          } else if (trimmedLine.startsWith('DYNATRACE_API_TOKEN=')) {
+            dynatraceApiToken = trimmedLine.split('=')[1];
+          }
         }
+      } catch (error) {
+        console.warn(`Could not read .env.dynatrace file at ${envFilePath}: ${error}`);
       }
-    } catch (error) {
-      throw new Error(`Failed to read .env.dynatrace file: ${error}`);
+    } else {
+      console.warn(`.env.dynatrace file not found at ${envFilePath} - skipping Dynatrace integration`);
     }
 
     if (!dynatraceEndpoint || !dynatraceApiToken) {
-      throw new Error('DYNATRACE_ENDPOINT and DYNATRACE_API_TOKEN must be set in .env.dynatrace file');
+      console.warn('Dynatrace configuration not found - skipping OpenTelemetry SSM parameters');
+      this.endpointParameterName = '';
+      this.apiTokenParameterName = '';
+      return;
     }
 
     // Create SSM parameters for OpenTelemetry configuration

@@ -34,15 +34,18 @@ export class OtelCollectorStack extends cdk.Stack {
       cpu: 256,
     });
 
-    // Get Dynatrace config from SSM
-    const dtEndpoint = ssm.StringParameter.valueFromLookup(
+    // Get Dynatrace config from SSM (if available)
+    const dtEndpoint = cdk.Token.asString(ssm.StringParameter.valueFromLookup(
       this,
       '/shopsmart/prod/opentelemetry/endpoint'
-    );
-    const dtToken = ssm.StringParameter.valueFromLookup(
+    ));
+    const dtToken = cdk.Token.asString(ssm.StringParameter.valueFromLookup(
       this,
       '/shopsmart/prod/opentelemetry/api-token'
-    );
+    ));
+
+    // Check if Dynatrace is configured (dummy value means parameter doesn't exist)
+    const dynatraceConfigured = dtEndpoint !== 'dummy-value-for-/shopsmart/prod/opentelemetry/endpoint';
 
     // Add container
     const container = taskDefinition.addContainer('OtelCollector', {
