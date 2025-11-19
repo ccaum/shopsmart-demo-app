@@ -219,6 +219,19 @@ export class ProductCatalogConstruct extends Construct {
     });
     
     dbCredentials.grantRead(taskRole);
+    
+    // Grant DynamoDB permissions for demo user creation
+    taskRole.addToPolicy(new iam.PolicyStatement({
+      actions: [
+        'dynamodb:DescribeTable',
+        'dynamodb:PutItem',
+        'dynamodb:GetItem',
+      ],
+      resources: [
+        `arn:aws:dynamodb:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:table/${props.projectName}-*-users`,
+        `arn:aws:dynamodb:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:table/${props.projectName}-*-carts`,
+      ],
+    }));
 
     // Task definition with container image built from Dockerfile
     const seedTaskDef = new ecs.FargateTaskDefinition(this, 'SeedTaskDef', {
