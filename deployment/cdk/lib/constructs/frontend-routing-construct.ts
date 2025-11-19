@@ -81,10 +81,11 @@ export class FrontendRoutingConstruct extends Construct {
     });
 
     // Deploy frontend assets to S3
-    // Use process.cwd() to resolve from project root (works in both local and CI/CD)
+    // Resolve path relative to CDK directory (2 levels up to project root, then to src/frontend)
+    const frontendPath = path.resolve(__dirname, '../../../../src/frontend');
     new s3deploy.BucketDeployment(this, 'FrontendAssetDeployment', {
       sources: [
-        s3deploy.Source.asset(path.join(process.cwd(), 'src/frontend'), {
+        s3deploy.Source.asset(frontendPath, {
           exclude: ['build.sh', '*.md']
         })
       ],
