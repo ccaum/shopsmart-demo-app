@@ -74,7 +74,7 @@ export class FrontendStack extends cdk.Stack {
     new s3deploy.BucketDeployment(this, 'DeployFrontend', {
       sources: [
         s3deploy.Source.asset(path.join(__dirname, '../../../src/frontend'), {
-          exclude: ['deploy', 'build', 'README.md'],
+          exclude: ['deploy', 'README.md'],
         }),
       ],
       destinationBucket: bucket,
