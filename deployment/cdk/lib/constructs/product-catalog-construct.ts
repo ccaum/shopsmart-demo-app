@@ -226,10 +226,13 @@ export class ProductCatalogConstruct extends Construct {
         'dynamodb:DescribeTable',
         'dynamodb:PutItem',
         'dynamodb:GetItem',
+        'dynamodb:Query',
       ],
       resources: [
         `arn:aws:dynamodb:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:table/${props.projectName}-*-users`,
         `arn:aws:dynamodb:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:table/${props.projectName}-*-carts`,
+        `arn:aws:dynamodb:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:table/${props.projectName}-*-users/index/*`,
+        `arn:aws:dynamodb:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:table/${props.projectName}-*-carts/index/*`,
       ],
     }));
 
@@ -260,6 +263,7 @@ export class ProductCatalogConstruct extends Construct {
         DB_USER: 'catalog_admin',
         PROJECT_NAME: props.projectName,
         ENVIRONMENT: props.environment,
+        AWS_REGION: cdk.Stack.of(this).region,
       },
       secrets: {
         DB_PASSWORD: ecs.Secret.fromSecretsManager(dbCredentials, 'password'),

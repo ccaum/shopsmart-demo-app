@@ -11,6 +11,7 @@ import uuid
 import hashlib
 import boto3
 from datetime import datetime
+from decimal import Decimal
 from botocore.exceptions import ClientError, NoCredentialsError
 
 # AWS Configuration
@@ -224,7 +225,7 @@ class DemoUserSeeder:
                     'userId': user_id,
                     'productId': item['productId'],
                     'name': item['name'],
-                    'price': item['price'],
+                    'price': Decimal(str(item['price'])),
                     'quantity': item['quantity'],
                     'addedAt': datetime.now().isoformat(),
                     'updatedAt': datetime.now().isoformat(),
