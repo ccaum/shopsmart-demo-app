@@ -81,10 +81,10 @@ export class FrontendRoutingConstruct extends Construct {
     });
 
     // Deploy frontend assets to S3
-    // Note: Configuration injection will be handled by a separate build process
+    // Use process.cwd() to resolve from project root (works in both local and CI/CD)
     new s3deploy.BucketDeployment(this, 'FrontendAssetDeployment', {
       sources: [
-        s3deploy.Source.asset(path.join(__dirname, '../../../../src/frontend'), {
+        s3deploy.Source.asset(path.join(process.cwd(), 'src/frontend'), {
           exclude: ['build.sh', '*.md']
         })
       ],
@@ -423,7 +423,7 @@ export class FrontendRoutingConstruct extends Construct {
         })
       : frontendAlbOrigin;
 
-    // S3 origin for static assets
+    // S3 origin for static assets (automatically creates OAI and grants permissions)
     const s3AssetsOrigin = new origins.S3Origin(frontendAssetsBucket);
 
     // CloudFront Distribution for global content delivery
