@@ -258,6 +258,8 @@ export class ProductCatalogConstruct extends Construct {
         DB_PORT: '5432',
         DB_NAME: 'shopsmart_catalog',
         DB_USER: 'catalog_admin',
+        PROJECT_NAME: props.projectName,
+        ENVIRONMENT: props.environment,
       },
       secrets: {
         DB_PASSWORD: ecs.Secret.fromSecretsManager(dbCredentials, 'password'),
