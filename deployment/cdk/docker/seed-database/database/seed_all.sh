@@ -131,6 +131,17 @@ run_schema_migration() {
     if [ -f "$SCRIPT_DIR/postgresql/migrate.sh" ]; then
         cd "$SCRIPT_DIR/postgresql"
         
+        # Create base schema first if it doesn't exist
+        log_info "Creating base schema..."
+        if [ -f "schema.sql" ]; then
+            if PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -p ${DB_PORT:-5432} -U $DB_USER -d $DB_NAME -f schema.sql; then
+                log_info "Base schema created successfully"
+            else
+                log_error "Failed to create base schema"
+                return 1
+            fi
+        fi
+        
         # Check migration status first
         log_info "Checking current migration status..."
         ./migrate.sh status || log_warn "No migrations applied yet"

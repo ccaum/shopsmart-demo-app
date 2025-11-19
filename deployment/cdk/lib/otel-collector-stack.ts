@@ -63,6 +63,7 @@ export class OtelCollectorStack extends cdk.Stack {
       environment: {
         DT_ENDPOINT: dtEndpointParam.stringValue,
         DT_API_TOKEN: dtTokenParam.stringValue,
+        API_TOKEN: dtTokenParam.stringValue,
         OTEL_CONFIG: `
 receivers:
   otlp:
@@ -74,9 +75,9 @@ receivers:
 
 exporters:
   otlphttp:
-    endpoint: \${DT_ENDPOINT}
+    endpoint: \${DT_ENDPOINT}/api/v2/otlp
     headers:
-      Authorization: "Api-Token \${DT_API_TOKEN}"
+      Authorization: "Api-Token \${API_TOKEN}"
 
 service:
   pipelines:

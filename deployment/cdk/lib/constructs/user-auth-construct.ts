@@ -19,6 +19,7 @@ export interface UserAuthConstructProps {
   dynamodbReadCapacity: number;
   dynamodbWriteCapacity: number;
   lambdaLoginMemory: number;
+  otelLayer: lambda.ILayerVersion;
 }
 
 export class UserAuthConstruct extends Construct {
@@ -38,7 +39,6 @@ export class UserAuthConstruct extends Construct {
       billingMode: dynamodb.BillingMode.PROVISIONED,
       readCapacity: props.dynamodbReadCapacity, // Deliberately low to match throttling issues
       writeCapacity: props.dynamodbWriteCapacity, // Deliberately low to match throttling issues
-      encryption: dynamodb.TableEncryption.AWS_MANAGED,
       pointInTimeRecovery: true,
       removalPolicy: cdk.RemovalPolicy.DESTROY, // For demo purposes
     });
@@ -64,7 +64,6 @@ export class UserAuthConstruct extends Construct {
       billingMode: dynamodb.BillingMode.PROVISIONED,
       readCapacity: props.dynamodbReadCapacity,
       writeCapacity: props.dynamodbWriteCapacity,
-      encryption: dynamodb.TableEncryption.AWS_MANAGED,
       timeToLiveAttribute: 'ttl',
       removalPolicy: cdk.RemovalPolicy.DESTROY, // For demo purposes
     });
@@ -79,7 +78,6 @@ export class UserAuthConstruct extends Construct {
       billingMode: dynamodb.BillingMode.PROVISIONED,
       readCapacity: props.dynamodbReadCapacity,
       writeCapacity: props.dynamodbWriteCapacity,
-      encryption: dynamodb.TableEncryption.AWS_MANAGED,
       timeToLiveAttribute: 'ttl',
       removalPolicy: cdk.RemovalPolicy.DESTROY, // For demo purposes
     });
@@ -172,20 +170,22 @@ export class UserAuthConstruct extends Construct {
       },
       securityGroups: [lambdaSecurityGroup],
       role: lambdaExecutionRole,
-      layers: [
-        lambda.LayerVersion.fromLayerVersionArn(this, 'OTelLayer', 
-          'arn:aws:lambda:us-west-2:901920570463:layer:aws-otel-python-amd64-ver-1-20-0:1')
-      ],
+      layers: [props.otelLayer],
       environment: {
         USER_TABLE_NAME: userTable.tableName,
         SESSION_TABLE_NAME: sessionTable.tableName,
         
-        // OpenTelemetry configuration - route through ECS OTel Collector
+        // OpenTelemetry configuration
         OTEL_EXPORTER_OTLP_ENDPOINT: otelCollectorUrl,
         OTEL_EXPORTER_OTLP_PROTOCOL: 'http/protobuf',
         OTEL_SERVICE_NAME: `auth-service-${cdk.Stack.of(this).account}`,
         OTEL_RESOURCE_ATTRIBUTES: `service.name=auth-service-${cdk.Stack.of(this).account},service.version=1.0.0,deployment.environment=${props.environment}`,
         AWS_LAMBDA_EXEC_WRAPPER: '/opt/otel-instrument',
+        
+        // Configure ADOT Lambda extension to export to external collector
+        OTEL_TRACES_EXPORTER: 'otlp',
+        OTEL_METRICS_EXPORTER: 'otlp',
+        OTEL_LOGS_EXPORTER: 'otlp',
       },
       code: lambda.Code.fromInline(`
 import json

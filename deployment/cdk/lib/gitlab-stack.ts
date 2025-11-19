@@ -6,7 +6,7 @@ import { Construct } from 'constructs';
 interface GitLabStackProps extends cdk.StackProps {
   projectName: string;
   environment: string;
-  availabilityZones: string[];
+  availabilityZones?: string[];
 }
 
 export class GitLabStack extends cdk.Stack {
@@ -16,10 +16,12 @@ export class GitLabStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: GitLabStackProps) {
     super(scope, id, props);
 
+    const availabilityZones = (props.availabilityZones || this.availabilityZones).slice(0, 3);
+
     // Import VPC from SharedInfra stack
     const vpc = ec2.Vpc.fromVpcAttributes(this, 'VPC', {
       vpcId: cdk.Fn.importValue('shopsmart-prod-VpcId'),
-      availabilityZones: props.availabilityZones,
+      availabilityZones,
       publicSubnetIds: [
         cdk.Fn.importValue('shopsmart-prod-PublicSubnet1Id'),
         cdk.Fn.importValue('shopsmart-prod-PublicSubnet2Id'),

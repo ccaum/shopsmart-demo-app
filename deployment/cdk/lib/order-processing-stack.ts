@@ -7,7 +7,7 @@ import { OrderProcessingEcsConstruct } from './constructs/order-processing-const
 export interface OrderProcessingStackProps extends cdk.StackProps {
   projectName: string;
   environment: string;
-  availabilityZones: string[];
+  availabilityZones?: string[];
   
   // Order Processing Service configuration (using ECS instead of EKS)
   eksNodeInstanceType: string; // Renamed but keeping for compatibility
@@ -27,13 +27,15 @@ export class OrderProcessingStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: OrderProcessingStackProps) {
     super(scope, id, props);
 
+    const availabilityZones = (props.availabilityZones || this.availabilityZones).slice(0, 3);
+
     // Import VPC and subnets from shared infrastructure stack
     const vpcId = cdk.Fn.importValue(`${props.projectName}-${props.environment}-VpcId`);
     const vpcCidr = cdk.Fn.importValue(`${props.projectName}-${props.environment}-VpcCidr`);
     const vpc = ec2.Vpc.fromVpcAttributes(this, 'ImportedVpc', {
       vpcId: vpcId,
       vpcCidrBlock: vpcCidr,
-      availabilityZones: props.availabilityZones,
+      availabilityZones,
     });
 
     // Import subnet IDs and create subnet objects
@@ -41,13 +43,13 @@ export class OrderProcessingStack extends cdk.Stack {
     const privateAppSubnets: ec2.ISubnet[] = [];
 
     // Import public subnets
-    props.availabilityZones.forEach((az, index) => {
+    availabilityZones.forEach((az, index) => {
       const subnetId = cdk.Fn.importValue(`${props.projectName}-${props.environment}-PublicSubnet${index + 1}Id`);
       publicSubnets.push(ec2.Subnet.fromSubnetId(this, `PublicSubnet${index + 1}`, subnetId));
     });
 
     // Import private app subnets
-    props.availabilityZones.forEach((az, index) => {
+    availabilityZones.forEach((az, index) => {
       const subnetId = cdk.Fn.importValue(`${props.projectName}-${props.environment}-PrivateAppSubnet${index + 1}Id`);
       privateAppSubnets.push(ec2.Subnet.fromSubnetId(this, `PrivateAppSubnet${index + 1}`, subnetId));
     });
@@ -57,7 +59,7 @@ export class OrderProcessingStack extends cdk.Stack {
       vpc: vpc,
       publicSubnets: publicSubnets,
       privateAppSubnets: privateAppSubnets,
-      availabilityZones: props.availabilityZones,
+      availabilityZones,
       projectName: props.projectName,
       environment: props.environment,
       

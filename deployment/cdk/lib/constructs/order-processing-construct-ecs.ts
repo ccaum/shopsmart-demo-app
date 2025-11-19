@@ -288,6 +288,8 @@ export class OrderProcessingEcsConstruct extends Construct {
       cpu: 512, // Increased for luxury order processing
       memoryLimitMiB: 1024, // Increased for luxury order processing
       environment: {
+        PROJECT_NAME: props.projectName,
+        ENVIRONMENT: props.environment,
         MONGODB_URI: `mongodb://admin:Password123!@mongodb-service.shopsmart-${props.environment}.local:27017/luxury_orders?authSource=admin`,
         NODE_ENV: 'production',
         ENABLE_LUXURY_ORDERS: 'true',

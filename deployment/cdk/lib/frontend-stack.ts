@@ -3,6 +3,7 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
+import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { Construct } from 'constructs';
 import * as path from 'path';
 
@@ -25,7 +26,7 @@ export class FrontendStack extends cdk.Stack {
 
     // S3 bucket for frontend static files
     const bucket = new s3.Bucket(this, 'FrontendBucket', {
-      bucketName: `${props.projectName}-${props.environment}-frontend`,
+      bucketName: `${props.projectName}-${props.environment}-frontend-${this.account}-${this.region}`,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       autoDeleteObjects: true,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,

@@ -1,9 +1,13 @@
 FROM public.ecr.aws/amazonlinux/amazonlinux:2
 
-# Install PostgreSQL client, Python 3, and dependencies
+# Install PostgreSQL client, Python 3, AWS CLI, and dependencies
 RUN yum update -y && \
     amazon-linux-extras install postgresql14 -y && \
-    yum install -y python3 python3-pip jq && \
+    yum install -y python3 python3-pip jq unzip && \
+    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+    unzip awscliv2.zip && \
+    ./aws/install && \
+    rm -rf aws awscliv2.zip && \
     yum clean all
 
 # Copy all database scripts

@@ -69,7 +69,7 @@ class OrderItem(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
     price: float = Field(..., gt=0)
     quantity: int = Field(..., gt=0)
-    crafting_time_months: Optional[int] = Field(None, alias="craftingTimeMonths", ge=1, le=24)
+    crafting_time_months: Optional[int] = Field(None, alias="craftingTimeMonths")
     artisan_name: Optional[str] = Field(None, alias="artisanName", max_length=100)
     material: Optional[str] = Field(None, max_length=100)
     style: Optional[str] = Field(None, max_length=50)

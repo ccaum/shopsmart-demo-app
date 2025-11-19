@@ -7,7 +7,7 @@ import { ApiGatewayRouterConstruct } from './constructs/api-gateway-router-const
 export interface ApiGatewayRouterStackProps extends cdk.StackProps {
   projectName: string;
   environment: string;
-  availabilityZones: string[];
+  availabilityZones?: string[];
 }
 
 export class ApiGatewayRouterStack extends cdk.Stack {
@@ -17,11 +17,13 @@ export class ApiGatewayRouterStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: ApiGatewayRouterStackProps) {
     super(scope, id, props);
 
+    const availabilityZones = (props.availabilityZones || this.availabilityZones).slice(0, 3);
+
     // Import VPC and subnets from shared infrastructure stack
     const vpcId = cdk.Fn.importValue(`${props.projectName}-${props.environment}-VpcId`);
     const vpc = ec2.Vpc.fromVpcAttributes(this, 'ImportedVpc', {
       vpcId: vpcId,
-      availabilityZones: props.availabilityZones,
+      availabilityZones,
     });
 
     // Import subnet IDs and create subnet objects
@@ -29,13 +31,13 @@ export class ApiGatewayRouterStack extends cdk.Stack {
     const privateAppSubnets: ec2.ISubnet[] = [];
 
     // Import public subnets
-    props.availabilityZones.forEach((az, index) => {
+    availabilityZones.forEach((az, index) => {
       const subnetId = cdk.Fn.importValue(`${props.projectName}-${props.environment}-PublicSubnet${index + 1}Id`);
       publicSubnets.push(ec2.Subnet.fromSubnetId(this, `PublicSubnet${index + 1}`, subnetId));
     });
 
     // Import private app subnets
-    props.availabilityZones.forEach((az, index) => {
+    availabilityZones.forEach((az, index) => {
       const subnetId = cdk.Fn.importValue(`${props.projectName}-${props.environment}-PrivateAppSubnet${index + 1}Id`);
       privateAppSubnets.push(ec2.Subnet.fromSubnetId(this, `PrivateAppSubnet${index + 1}`, subnetId));
     });

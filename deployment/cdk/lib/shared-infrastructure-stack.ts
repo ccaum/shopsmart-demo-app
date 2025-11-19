@@ -11,7 +11,7 @@ export interface SharedInfrastructureStackProps extends cdk.StackProps {
   projectName: string;
   environment: string;
   vpcCidr: string;
-  availabilityZones: string[];
+  availabilityZones?: string[];
   otelConfig: OpenTelemetryConfig;
 }
 
@@ -26,10 +26,12 @@ export class SharedInfrastructureStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: SharedInfrastructureStackProps) {
     super(scope, id, props);
 
+    const availabilityZones = (props.availabilityZones || this.availabilityZones).slice(0, 3);
+
     // Create VPC and networking components
     const vpcConstruct = new VpcConstruct(this, 'VPC', {
       vpcCidr: props.vpcCidr,
-      availabilityZones: props.availabilityZones,
+      availabilityZones,
       projectName: props.projectName,
       environment: props.environment,
     });
@@ -100,7 +102,7 @@ export class SharedInfrastructureStack extends cdk.Stack {
     });
 
     // Export availability zones
-    props.availabilityZones.forEach((az, index) => {
+    availabilityZones.forEach((az, index) => {
       new cdk.CfnOutput(this, `AvailabilityZone${index + 1}`, {
         value: az,
         exportName: `${props.projectName}-${props.environment}-AvailabilityZone${index + 1}`,

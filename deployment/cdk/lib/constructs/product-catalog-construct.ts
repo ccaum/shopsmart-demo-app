@@ -48,7 +48,7 @@ export class ProductCatalogConstruct extends Construct {
     // S3 Bucket for backend application deployments
     // S3 Bucket for application deployment
     const deploymentBucket = new s3.Bucket(this, 'AppDeploymentBucket', {
-      bucketName: `${props.projectName}-${props.environment}-deployments`,
+      bucketName: `${props.projectName}-${props.environment}-deployments-${cdk.Stack.of(this).account}`,
       encryption: s3.BucketEncryption.S3_MANAGED,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       removalPolicy: cdk.RemovalPolicy.DESTROY,

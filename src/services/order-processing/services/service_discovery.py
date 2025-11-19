@@ -166,28 +166,40 @@ class ServiceDiscovery:
             return
         
         try:
-            # Get all service parameters
-            response = self.ssm_client.get_parameters_by_path(
-                Path=self.ssm_prefix,
-                Recursive=True,
-                MaxResults=10  # AWS SSM limit
-            )
-            
-            # Parse parameters into service cache
+            # Get all service parameters with pagination
             services = {}
-            for param in response['Parameters']:
-                # Parse parameter name: /project/env/services/service-name/property
-                param_path = param['Name'].replace(self.ssm_prefix, '').strip('/')
-                path_parts = param_path.split('/')
+            next_token = None
+            
+            while True:
+                params = {
+                    'Path': self.ssm_prefix,
+                    'Recursive': True,
+                    'MaxResults': 10
+                }
+                if next_token:
+                    params['NextToken'] = next_token
+                    
+                response = self.ssm_client.get_parameters_by_path(**params)
                 
-                if len(path_parts) >= 2:
-                    service_name = path_parts[0]
-                    property_name = path_parts[1]
+                # Parse parameters into service cache
+                for param in response['Parameters']:
+                    # Parse parameter name: /project/env/services/service-name/property
+                    param_path = param['Name'].replace(self.ssm_prefix, '').strip('/')
+                    path_parts = param_path.split('/')
                     
-                    if service_name not in services:
-                        services[service_name] = {}
-                    
-                    services[service_name][property_name] = param['Value']
+                    if len(path_parts) >= 2:
+                        service_name = path_parts[0]
+                        property_name = path_parts[1]
+                        
+                        if service_name not in services:
+                            services[service_name] = {}
+                        
+                        services[service_name][property_name] = param['Value']
+                
+                # Check for more pages
+                next_token = response.get('NextToken')
+                if not next_token:
+                    break
             
             # Update cache
             self._service_cache = services
@@ -242,7 +254,7 @@ class ServiceDiscovery:
 def get_service_discovery() -> ServiceDiscovery:
     """Get cached service discovery instance."""
     project_name = os.environ.get('PROJECT_NAME', 'shopsmart')
-    environment = os.environ.get('DEPLOYMENT_ENVIRONMENT', 'production')
+    environment = os.environ.get('ENVIRONMENT', os.environ.get('DEPLOYMENT_ENVIRONMENT', 'production'))
     region = os.environ.get('AWS_REGION', 'us-east-1')
     
     return ServiceDiscovery(project_name, environment, region)
